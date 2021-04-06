@@ -1,0 +1,90 @@
+from flask import Flask, request
+import json
+import random
+
+app = Flask(__name__)
+
+
+storage = {}
+
+
+@app.route('/', methods=['POST'])
+def main():
+    req = request.json
+    user_id = req["session"]["user_id"]
+
+    if req["session"]["new"]:
+        storage[user_id] = {'victories': 0, 'defeats': 0}   #можно будет подвести итог всем играм
+        return generate_response(req, "Поажлуйста, выберите режим из списка: Обучение, Игра с Алисой.")
+
+    context = storage[user_id]   #ведется счёт
+    answer = req["request"]["original_utterance"].lower()
+
+    if answer in ['выход', 'закончили', 'стоп'] and context['victories'] == 0 and context['victories'] == 0:
+        return generate_response(req, "Мы круто провели время! Заходи еще", end_session=True)
+    elif answer in ['выход', 'закончили', 'стоп'] and (context['victories'] != 0 or context['defeats'] != 0):
+        wins = context['victories']
+        defeat = context['defeats']
+        return generate_response(req, f"Мы круто провели время! \
+                                 Ты выиграл {wins} раз и проиграл {defeat} раз. Заходи еще", 
+                                 end_session=True)
+
+    elif answer not in {'обучение', 'игра с алисой'}:
+        return generate_response(req, "Необходимо выбрать режим из списка.")
+
+    elif answer == 'обучение':
+        #запускается сценарий обучения
+        pass
+    elif answer in ['игра с алисой', 'игра', 'играем']:
+        #аналогично сценарий игры с Алисой
+        result = nim_game(user_id)
+        name, point = result.split('-')
+        if name == 'you':
+            context['victories'] += 1
+        else:
+            context['defeats'] += 1
+
+    #return generate_response(req, result, end_session=True)
+
+
+def nim_game(user_id):
+    number = random.randint(4, 15)
+    # return generate_response(req, f"В куче {number} камней")
+    while number > 0:
+        print('Ход ИИ:')
+        if number % 4 != 0:
+            n = number % 4
+        else:
+            n = 3
+        number -= n
+        print('Взято', n, 'камней. Осталось:', str(number) + '.')
+        if number > 0:
+            n = int(input('Ход игрока: '))
+            while n > 3:
+                n = int(input('Введите кол-во взятых камней(от 1 до 3): '))
+            number -= n
+            print('Взято', n, 'камней.', 'Осталось:', str(number) + '.')
+            if number <= 0:
+                print('Вы выиграли.')
+                winner_writter = 'you-1'
+                return winner_writter
+        else:
+            print('Алиса выиграла')
+            winner_writter = 'alice-1'
+            return winner_writter
+
+
+def generate_response(req, text, end_session=False):
+    res = {
+        "version": req["version"],
+        "session": req["session"],
+        "response": {
+            "end_session": end_session,
+            "text": text
+        }
+    }
+    return json.dumps(res, indent=2)
+
+
+if __name__ == '__main__':
+    app.run('0.0.0.0', 8080)
