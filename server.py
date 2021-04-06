@@ -44,25 +44,33 @@ def main():
     elif (answer == 'две' or answer == 'две кучки') and context['kuchki'] == 0 and context['mode'] == 'игра': #формируем игру на две кучки
         pass
 
-    elif (answer == 'да' or answer == 'объясни') and context['mode'] == 'игра' and context['kuchki'] == 1:
-        #объясняем правила, Алиса делает первый ход
-        chips = context['chips']
-        chips_out = context['max_chips_out']
-        motion = generate_motion(1, chips, chips_out, first=True)
-        context['chips'] -= motion[1]
-        rules = f'Объясняю: всего {chips} фишек в куче. Мы по очереди берём 1-{chips_out} фишек.' \
+    elif (answer == 'да' or answer == 'объясни') and context['mode'] == 'игра' and context['kuchki'] in [1, 2]:
+        #объясняем правила для 1 и 2 куч, Алиса делает первый ход
+        kuchki = context['kuchki']
+        if kuchki == 1:
+            chips = context['chips']
+            chips_out = context['max_chips_out']
+            motion = generate_motion(1, chips, chips_out, first=True)
+            context['chips'] -= motion[1]
+            rules = f'Объясняю: всего {chips} фишек в куче. Мы по очереди берём 1-{chips_out} фишек.' \
                 f'Выиграет тот, кто заберёт последнюю. Давайте, я начну. Беру {motion[0]}. Осталось {motion[1]}.' \
                 f'Теперь ваш ход. Сколько фишек вы забираете?'
-        return generate_response(req, rules)
+            return generate_response(req, rules)
+        elif kuchki == 2:
+            pass
 
-    elif (answer == 'нет' or answer == 'не нужно') and context['mode'] == 'игра' and context['kuchki'] == 1:
+    elif (answer == 'нет' or answer == 'не нужно') and context['mode'] == 'игра' and context['kuchki'] in [1, 2]:
         #Алиса делает первый ход
-        chips = context['chips']
-        chips_out = context['max_chips_out']
-        motion = generate_motion(1, chips, chips_out, first=True)
-        context['chips'] -= motion[1]
-        text = f'Хорошо, тогда я начну. Беру {motion[0]}. Осталось {motion[1]}. Теперь ваш ход.'
-        return generate_response(req, text)
+        kuchki = context['kuchki']
+        if kuchki == 1:
+            chips = context['chips']
+            chips_out = context['max_chips_out']
+            motion = generate_motion(1, chips, chips_out, first=True)
+            context['chips'] -= motion[1]
+            text = f'Хорошо, тогда я начну. Беру {motion[0]}. Осталось {motion[1]}. Теперь ваш ход.'
+            return generate_response(req, text)
+        elif kuchki == 2:
+            pass
 
     #...
 
