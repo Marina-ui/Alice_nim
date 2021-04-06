@@ -20,13 +20,16 @@ def main():
     context = storage[user_id]   #ведется счёт
     answer = req["request"]["original_utterance"].lower()
 
-    if answer in ['выход', 'закончили', 'стоп'] and context['victories'] == 0 and context['victories'] == 0:
+    if answer in ['выход', 'закончили', 'стоп'] and context['victories'] == 0 and\          
+            context['victories'] == 0:                      # выход без озвучивания счета, тк игр не было
         return generate_response(req, "Мы круто провели время! Заходи еще", end_session=True)
-    elif answer in ['выход', 'закончили', 'стоп'] and (context['victories'] != 0 or context['defeats'] != 0):
+    
+    elif answer in ['выход', 'закончили', 'стоп'] and (context['victories'] != 0 or
+                                                       context['defeats'] != 0):        # выход с озвучиванием счета, тк игры были
         wins = context['victories']
         defeat = context['defeats']
         return generate_response(req, f"Мы круто провели время! \
-                                 Ты выиграл {wins} раз и проиграл {defeat} раз. Заходи еще", 
+                                 Ты выиграл {wins} раз и проиграл {defeat} раз. Заходи еще",
                                  end_session=True)
 
     elif answer not in {'обучение', 'игра с алисой'}:
@@ -35,12 +38,12 @@ def main():
     elif answer == 'обучение':
         #запускается сценарий обучения
         pass
-    elif answer in ['игра с алисой', 'игра', 'играем']:
-        #аналогично сценарий игры с Алисой
+    elif answer in ['игра с алисой', 'игра', 'играем']:   
         result = nim_game(user_id)
+        
         name, point = result.split('-')
         if name == 'you':
-            context['victories'] += 1
+            context['victories'] += 1      # добавление очков после игры
         else:
             context['defeats'] += 1
 
@@ -70,7 +73,7 @@ def nim_game(user_id):
                 return winner_writter
         else:
             print('Алиса выиграла')
-            winner_writter = 'alice-1'
+            winner_writter = 'alice-1'      #победа алисы и передача в аргументы
             return winner_writter
 
 
