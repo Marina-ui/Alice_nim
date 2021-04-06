@@ -15,37 +15,32 @@ def main():
 
     if req["session"]["new"]:
         storage[user_id] = {'victories': 0, 'defeats': 0}   #можно будет подвести итог всем играм
-        return generate_response(req, "Поажлуйста, выберите режим из списка: Обучение, Игра с Алисой.")
+        return generate_response(req, "Пожалуйста, выберите режим из списка: Обучение, Игра с Алисой, Счет игры")
 
-    context = storage[user_id]   #ведется счёт
+    context_points = storage[user_id]   #ведется счёт
     answer = req["request"]["original_utterance"].lower()
 
-    if answer in ['выход', 'закончили', 'стоп'] and context['victories'] == 0 and\          
-            context['victories'] == 0:                      # выход без озвучивания счета, тк игр не было
-        return generate_response(req, "Мы круто провели время! Заходи еще", end_session=True)
-    
-    elif answer in ['выход', 'закончили', 'стоп'] and (context['victories'] != 0 or
-                                                       context['defeats'] != 0):        # выход с озвучиванием счета, тк игры были
-        wins = context['victories']
-        defeat = context['defeats']
-        return generate_response(req, f"Мы круто провели время! \
-                                 Ты выиграл {wins} раз и проиграл {defeat} раз. Заходи еще",
-                                 end_session=True)
-
-    elif answer not in {'обучение', 'игра с алисой'}:
+    if answer not in {'обучение', 'игра с алисой', 'счет игры'}:
         return generate_response(req, "Необходимо выбрать режим из списка.")
 
     elif answer == 'обучение':
         #запускается сценарий обучения
         pass
-    elif answer in ['игра с алисой', 'игра', 'играем']:   
+
+    elif answer == 'счет игры':
+        wins = context_points['victories']
+        defeat = context_points['defeats']
+        return generate_response(req, f"Ты выиграл {wins} раз и проиграл {defeat} раз.",
+                                 end_session=True)
+
+    elif answer in ['игра с алисой', 'игра', 'играем']:
         result = nim_game(user_id)
-        
+
         name, point = result.split('-')
         if name == 'you':
-            context['victories'] += 1      # добавление очков после игры
+            context_points['victories'] += 1      # добавление очков после игры
         else:
-            context['defeats'] += 1
+            context_points['defeats'] += 1
 
     #return generate_response(req, result, end_session=True)
 
