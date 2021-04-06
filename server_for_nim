@@ -33,7 +33,7 @@ def main():
         return generate_response(req, f"Ты выиграл {wins} раз и проиграл {defeat} раз.",
                                  end_session=True)
 
-    elif answer in ['игра с алисой', 'игра', 'играем']:
+    elif answer == 'игра с алисой':
         result = nim_game(user_id)
 
         name, point = result.split('-')
