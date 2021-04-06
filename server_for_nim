@@ -37,7 +37,7 @@ def main():
         elif wins > defeats:
             answer_for_points = 'Вы сегодня играете прекрасно! Победа за вами'
         else:
-            answer_for_points = 'Как всегда, победа за мной! В следующий раз отыграешься'
+            answer_for_points = 'Как всегда, победа за мной! В следующий раз отыграетесь'
 
         return generate_response(req, f"Счет {wins} : {defeats}. {answer_for_points}",
                                  end_session=True)
