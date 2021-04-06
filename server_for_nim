@@ -1,9 +1,8 @@
 from flask import Flask, request
 import json
-import random
+import random as r
 
 app = Flask(__name__)
-
 
 storage = {}
 
@@ -14,22 +13,29 @@ def main():
     user_id = req["session"]["user_id"]
 
     if req["session"]["new"]:
-        storage[user_id] = {'victories': 0, 'defeats': 0}   #можно будет подвести итог всем играм
-        return generate_response(req, "Пожалуйста, выберите режим из списка: Обучение, Игра с Алисой, Счет игры")
+        storage[user_id] = {'victories': 0, 'defeats': 0, 'mode': 'new'}  # можно будет подвести итог всем играм
+        return generate_response(req, "Пожалуйста, выберите режим из списка: Обучение, Игра с Алисой, Какой счет.")
 
-    context_points = storage[user_id]   #ведется счёт
+    context = storage[user_id]
     answer = req["request"]["original_utterance"].lower()
 
-    if answer not in {'обучение', 'игра с алисой', 'счет игры'}:
+    if answer not in {'обучение', 'игра с алисой', 'какой счет'} and context['mode'] == 'new':
         return generate_response(req, "Необходимо выбрать режим из списка.")
 
-    elif answer == 'обучение':
-        #запускается сценарий обучения
+    if answer == 'обучение' and context['mode'] == 'new':
+        # запускается сценарий обучения
         pass
+    elif answer == 'игра с алисой' and context['mode'] == 'new':
+        # создаём контекст игры, запрашиваем кол-во кучек
+        context['mode'] = 'игра'
+        context['kuchki'] = 0
+        return generate_response(req, 'Всегда рада с вами поиграть. Выберите количество кучек: одна или две')
 
-    elif answer == 'счет игры':
-        wins = context_points['victories']
-        defeats = context_points['defeats']
+    elif answer == 'какой счет' and context['mode'] == 'new':
+        # создаём контекст игры, запрашиваем кол-во кучек
+        context['mode'] = 'счет'
+        wins = context['victories']
+        defeats = context['defeats']
         if wins == 0 and defeats == 0:
             answer_for_points = 'Мы еще не сыграли! Не порали начать?'
         elif wins == defeats:
@@ -42,42 +48,60 @@ def main():
         return generate_response(req, f"Счет {wins} : {defeats}. {answer_for_points}",
                                  end_session=True)
 
-    elif answer == 'игра с алисой':
-        result = nim_game(user_id)
-
+    elif (answer == 'одна' or answer == 'одна кучка') and context['kuchki'] == 0 and context[
+        'mode'] == 'игра':  # формируем игру на одну кучку
+        # записываем в контекст оставшиеся параметры, овучиваем правила
+        context['kuchki'] = 1
+        chips = r.randint(20, 30)  # диапазон камней
+        chips_out = r.randint(3, 5)  # максимальное колво забираемых камней
+        context['chips'] = chips
+        context['max_chips_out'] = chips_out
+        rules = f'Отлично. Вот правило: всего {chips} фишек в куче. Мы по очереди берём 1-{chips_out} фишек.' \
+                f'Выиграет тот, кто заберёт последнюю. Формат вашего ответа: Забираю n фишек. Давайте, я начну.' 
+        
+        result = generate_motion(1, chips, chips_out, first=False)  # тут будет логика с функцией generate_motion
         name, point = result.split('-')
         if name == 'you':
-            context_points['victories'] += 1      # добавление очков после игры
+            context['victories'] += 1  # добавление очков после игры
         else:
-            context_points['defeats'] += 1
+            context['defeats'] += 1
+            
+        return generate_response(req, rules)
 
-    #return generate_response(req, result, end_session=True)
+    elif (answer == 'две' or answer == 'две кучки') and context['kuchki'] == 0 and context[
+        'mode'] == 'игра':  # формируем игру на две кучки
+        pass
+
+    # ...
+
+    else:
+        return generate_response(req, 'Неправильный формат ответа. Пожалуйста, повторите.')
+
+    # return generate_response(req, result, end_session=True)
 
 
-def nim_game(user_id):
-    number = random.randint(4, 15)
-    # return generate_response(req, f"В куче {number} камней")
-    while number > 0:
+def generate_motion(kuchki, chips, chips_out, first=False):  # генерирует ход Алисы
+    while chips > 0:
         print('Ход ИИ:')
-        if number % 4 != 0:
-            n = number % 4
+        if chips % 4 != 0:
+            n = chips % 4
         else:
             n = 3
-        number -= n
-        print('Взято', n, 'камней. Осталось:', str(number) + '.')
-        if number > 0:
+        chips -= n
+        print('Взято', n, 'камней. Осталось:', str(chips) + '.')
+        if chips > 0:
             n = int(input('Ход игрока: '))
             while n > 3:
                 n = int(input('Введите кол-во взятых камней(от 1 до 3): '))
-            number -= n
-            print('Взято', n, 'камней.', 'Осталось:', str(number) + '.')
-            if number <= 0:
+            chips -= n
+            print('Взято', n, 'камней.', 'Осталось:', str(chips) + '.')
+            if chips <= 0:
                 print('Вы выиграли.')
                 winner_writter = 'you-1'
                 return winner_writter
         else:
             print('Алиса выиграла')
-            winner_writter = 'alice-1'      #победа алисы и передача в аргументы
+            winner_writter = 'alice-1'  # победа алисы и передача в аргументы
             return winner_writter
 
 
