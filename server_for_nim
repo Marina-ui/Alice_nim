@@ -37,13 +37,13 @@ def main():
     elif (answer == 'одна' or answer == 'одна кучка') and context['kuchki'] == 0 and context['mode'] == 'игра': #формируем игру на одну кучку
         #записываем в контекст оставшиеся параметры, озвучиваем правила
         context['kuchki'] = 1
-        context['chips'] = r.randint(15, 30)  # диапазон камней
+        context['chips_1'] = r.randint(15, 30)  # диапазон камней
         context['max_chips_out'] = r.randint(3, 5)  # максимальное колво забираемых камней
         return generate_response(req, 'Одна, так одна. Вам объяснить правила?')
 
     elif (answer == 'две' or answer == 'две кучки') and context['kuchki'] == 0 and context['mode'] == 'игра': #формируем игру на две кучки
         context['kuchki'] = 2
-        context['chips'] = r.randint(10, 30)  # диапазон камней
+        context['chips_1'] = r.randint(10, 30)  # диапазон камней
         context['chips_2'] = r.randint(10, 30)
         context['max_chips_out'] = r.randint(3, 5)  # максимальное колво забираемых камней
         return generate_response(req, 'Две, так две. Вам объяснить правила?')
@@ -52,25 +52,25 @@ def main():
         #объясняем правила для 1 и 2 куч, Алиса делает первый ход
         kuchki = context['kuchki']
         if kuchki == 1:
-            chips = context['chips']
+            chips_1 = context['chips_1']
             chips_out = context['max_chips_out']
-            motion = generate_motion(1, chips, chips_out, first=True)
-            context['chips'] -= motion[1]
-            rules = f'Объясняю: всего {chips} фишек в куче. Мы по очереди берём 1-{chips_out} фишек.' \
+            motion = generate_motion(1, chips_1, chips_out, give_up=True)
+            context['chips_1'] -= motion[1]
+            rules = f'Объясняю: всего {chips_1} фишек в куче. Мы по очереди берём 1-{chips_out} фишек.' \
                 f'Выиграет тот, кто заберёт последнюю. Давайте, я начну. Беру {motion[0]}. Осталось {motion[1]}.' \
                 f'Теперь ваш ход. Сколько фишек вы забираете?'
             return generate_response(req, rules)
         elif kuchki == 2:
-            chips = context['chips']
+            chips_1 = context['chips_1']
             chips_2 = context['chips_2']
             chips_out = context['max_chips_out']
-            
-            motion = generate_motion(2, chips, chips_out, chips_2, first=True)      # ТУТ ПОПРАВИТЬ ЛОГИКУ ДЛЯ 2-Х КУЧ
-            context['chips'] -= motion[1]
-            
-            rules = f'Объясняю: всего {chips} фишек в первой куче и {chips_2} во второй. Мы по очереди берём 1-{chips_out} фишек из любой кучи.' \
+
+            motion = generate_motion(2, chips_1, chips_out, chips_2, give_up=True)      # ТУТ ПОПРАВИТЬ ЛОГИКУ ДЛЯ 2-Х КУЧ
+            context['chips_1'] -= motion[1]
+
+            rules = f'Объясняю: всего {chips_1} фишек в первой куче и {chips_2} во второй. Мы по очереди берём 1-{chips_out} фишек из любой кучи.' \
                     f'Выиграет тот, кто заберёт последнюю. Давайте, я начну. Беру {motion[0]}. Осталось {motion[1]}.' \   
-                    f'Теперь ваш ход. Сколько фишек и из какой кучи вы забираете?' 
+                    f'Теперь ваш ход. Сначала скажите из какой кучи, а затем сколько фишек вы берете'
             # ПОПРАВИТЬ ВЫВОД И ЛОГИКУ ^^^
             return generate_response(req, rules)
 
@@ -78,21 +78,20 @@ def main():
         #Алиса делает первый ход
         kuchki = context['kuchki']
         if kuchki == 1:
-            chips = context['chips']
+            chips_1 = context['chips_1']
+            chips_out = context['max_chips_out']
+            motion = generate_motion(1, chips_1, chips_out, give_up=True)    
+            context['chips_1'] -= motion[1]
+            text = f'Хорошо, тогда я начну. Беру {motion[0]}. Осталось {motion[1]}. Теперь ваш ход.'
+            return generate_response(req, text)
+
+        elif kuchki == 2:
+            chips_1 = context['chips_1']
             chips_2 = context['chips_2']
             chips_out = context['max_chips_out']
             
-            motion = generate_motion(1, chips, chips_out, first=True)    #  ПОПРАВИТЬ ЛОГИКУ ДЛЯ 2-x КУЧ
-            context['chips'] -= motion[1]
-            
-            text = f'Хорошо, тогда я начну. Беру {motion[0]}. Осталось {motion[1]}. Теперь ваш ход.'
-            return generate_response(req, text)
-        
-        elif kuchki == 2:
-            chips = context['chips']
-            chips_out = context['max_chips_out']
-            motion = generate_motion(1, chips, chips_out, first=True)
-            context['chips'] -= motion[1]
+            motion = generate_motion(1, chips_1, chips_out, give_up=True)             #  ПОПРАВИТЬ ЛОГИКУ ДЛЯ 2-x КУЧ
+            context['chips_1'] -= motion[1]
             text = f'Хорошо, тогда я начну. Беру {motion[0]}. Осталось {motion[1]}. Теперь ваш ход.'
             return generate_response(req, text)
 
@@ -117,9 +116,9 @@ def generate_response(req, text, end_session=False):
     return json.dumps(res, indent=2)
 
 
-def generate_motion(kuchki, chips, chips_out, chips_2=0, first=False):   #генерирует ход Алисы
-    if kuchki == 1 and first:           #первым ходом создаём выигрышную позицию для игрока в игре с одной кучкой
-        ost = chips % (chips_out + 1)
+def generate_motion(kuchki, chips_1, chips_out, chips_2=0, give_up=False):   #генерирует ход Алисы
+    if kuchki == 1 and give_up:           #первым ходом создаём выигрышную позицию для игрока в игре с одной кучкой
+        ost = chips_1 % (chips_out + 1)
         if ost == 0:
             motion = r.randint(1, chips_out)
         elif ost > 1:
@@ -127,21 +126,23 @@ def generate_motion(kuchki, chips, chips_out, chips_2=0, first=False):   #ген
         else:
             motion = r.randint(2, chips_out)
 
-    elif kuchki == 1 and chips > chips_out:        #пытаемся привести игрока в проигрышную позицию
-        ost = chips % (chips_out + 1)
+    elif kuchki == 1 and chips_1 > chips_out:        #пытаемся привести игрока в проигрышную позицию
+        ost = chips_1 % (chips_out + 1)
         if ost == 0:
             motion = r.randint(1, chips_out)
         else:
             motion = ost
 
-    elif kuchki == 1 and chips < chips_out:    #берём последние
-        motion = chips
+    elif kuchki == 1 and chips_1 < chips_out:    #берём последние
+        motion = chips_1
 
-    elif kuchki == 2:     #ходы при игре с двумя кучками
+    elif kuchki == 2 and give_up:     #ходы при игре с двумя кучками С ПОДДАВКАМИ ОТ АЛИСЫ
         pass
 
-    chips -= motion
-    return (motion, chips)
+    elif kuchki == 1 and chips_1 > chips_out:
+
+    chips_1 -= motion
+    return (motion, chips_1)
 
 
 if __name__ == '__main__':
