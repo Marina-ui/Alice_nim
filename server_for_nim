@@ -54,7 +54,7 @@ def main():
         if kuchki == 1:
             chips_1 = context['chips_1']
             chips_out = context['max_chips_out']
-            motion = generate_motion(1, chips_1, chips_out, give_up=True)
+            motion = generate_motion(1, chips_1, chips_out, first_motion=True)
             context['chips_1'] -= motion[1]
             rules = f'Объясняю: всего {chips_1} фишек в куче. Мы по очереди берём 1-{chips_out} фишек.' \
                 f'Выиграет тот, кто заберёт последнюю. Давайте, я начну. Беру {motion[0]}. Осталось {motion[1]}.' \
@@ -65,7 +65,7 @@ def main():
             chips_2 = context['chips_2']
             chips_out = context['max_chips_out']
 
-            motion = generate_motion(2, chips_1, chips_out, chips_2, give_up=True)      # ТУТ ПОПРАВИТЬ ЛОГИКУ ДЛЯ 2-Х КУЧ
+            motion = generate_motion(2, chips_1, chips_out, chips_2, first_motion=True)      # ТУТ ПОПРАВИТЬ ЛОГИКУ ДЛЯ 2-Х КУЧ
             context['chips_1'] -= motion[1]
 
             rules = f'Объясняю: всего {chips_1} фишек в первой куче и {chips_2} во второй. Мы по очереди берём 1-{chips_out} фишек из любой кучи.' \
@@ -80,7 +80,7 @@ def main():
         if kuchki == 1:
             chips_1 = context['chips_1']
             chips_out = context['max_chips_out']
-            motion = generate_motion(1, chips_1, chips_out, give_up=True)    
+            motion = generate_motion(1, chips_1, chips_out, first_motion=True)
             context['chips_1'] -= motion[1]
             text = f'Хорошо, тогда я начну. Беру {motion[0]}. Осталось {motion[1]}. Теперь ваш ход.'
             return generate_response(req, text)
@@ -89,8 +89,8 @@ def main():
             chips_1 = context['chips_1']
             chips_2 = context['chips_2']
             chips_out = context['max_chips_out']
-            
-            motion = generate_motion(1, chips_1, chips_out, give_up=True)             #  ПОПРАВИТЬ ЛОГИКУ ДЛЯ 2-x КУЧ
+
+            motion = generate_motion(1, chips_1, chips_out, first_motion=True)             #  ПОПРАВИТЬ ЛОГИКУ ДЛЯ 2-x КУЧ
             context['chips_1'] -= motion[1]
             text = f'Хорошо, тогда я начну. Беру {motion[0]}. Осталось {motion[1]}. Теперь ваш ход.'
             return generate_response(req, text)
@@ -116,8 +116,8 @@ def generate_response(req, text, end_session=False):
     return json.dumps(res, indent=2)
 
 
-def generate_motion(kuchki, chips_1, chips_out, chips_2=0, give_up=False):   #генерирует ход Алисы
-    if kuchki == 1 and give_up:           #первым ходом создаём выигрышную позицию для игрока в игре с одной кучкой
+def generate_motion(kuchki, chips_1, chips_out, chips_2=0, first_motion=False):   #генерирует ход Алисы
+    if kuchki == 1 and first_motion:           #первым ходом создаём выигрышную позицию для игрока в игре с одной кучкой
         ost = chips_1 % (chips_out + 1)
         if ost == 0:
             motion = r.randint(1, chips_out)
@@ -136,10 +136,13 @@ def generate_motion(kuchki, chips_1, chips_out, chips_2=0, give_up=False):   #г
     elif kuchki == 1 and chips_1 < chips_out:    #берём последние
         motion = chips_1
 
-    elif kuchki == 2 and give_up:     #ходы при игре с двумя кучками С ПОДДАВКАМИ ОТ АЛИСЫ
+
+    elif kuchki == 2 and first_motion:     #ходы при игре с двумя кучками С ПОДДАВКАМИ ОТ АЛИСЫ
+        motion = abs(chips_1 - chips_2)
+
+    elif kuchki == 2 and chips_1 > chips_out:
         pass
 
-    elif kuchki == 1 and chips_1 > chips_out:
 
     chips_1 -= motion
     return (motion, chips_1)
