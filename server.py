@@ -37,6 +37,8 @@ def main():
         context['kuchki'] = 0
         context['onek_tng_finished'] = False
         context['twok_tng_finished'] = False
+        context['tng_finished'] = False
+        context['want_to_learn'] = False #*
         return generate_response(req, "Выберите количество кучек для обучения: одна или две.")
 
     elif answer == 'игра с алисой' and context['mode'] == 'new':
@@ -166,7 +168,8 @@ def main():
                     f'Осталось {chips[0]} в первой, и {chips[1]} - во второй. Теперь ваш ход.'
             return generate_response(req, text)
 
-    elif answer and context['mode'] == 'игра' and context['first_motion'] and not context['game_finished'] and \
+    elif (answer and context['mode'] == 'игра' and context['first_motion'] and not context['game_finished'] or
+          context['mode'] == 'обучение') and \
             ('забираю последн' in answer or 'беру последн' in answer or
              req["request"]["nlu"]["tokens"][0].lower() in answ_let_to_num.keys() or
              int(req["request"]["nlu"]["tokens"][0]) in answ_let_to_num.values()):
@@ -194,17 +197,35 @@ def main():
             elif 'забираю последн' not in answer and 'беру последн' not in answer:  # *
                 user_motion[0] = int(user_motion[0])
                 context['chips'][0] -= user_motion[0]
-            if chips[0] == 0 or 'забираю последн' in answer or 'беру последн' in answer:
+            if (chips[0] <= 0 or 'забираю последн' in answer or 'беру последн' in answer) and \
+                    context['mode'] == 'обучение':
+                # картинка с сертификатом
+                #* тут была
+                context['onek_tng_finished'] = True
+                context['tng_finished'] = True
+                if chips[0] == 0:
+                    text = f''
+                else:
+                    text = f''
+                if context['twok_tng_finished']:
+                    # предлагает сертификат а прохождение одной кучки и предлагает сыграть с ней
+                    text += f''
+                    context['want_to_play'] = True
+                if not context['twok_tng_finished']:
+                    # предлагает сертификат о прохождении одной кучкой и предлагает пройти обучение с двумя
+                    text += f''
+                    context['want_to_learn'] = True
+                return generate_response(req, text)
+            elif chips[0] <= 0 or 'забираю последн' in answer or 'беру последн' in answer:
                 context['winner'] = 'user'
                 context['game_finished'] = True
                 context['victories'] += 1
-                return generate_response(req, 'Ну вот, вы не оставили мне камней, вы победили. Не хотите сыграть ещё?')
-            elif chips[0] < 0:
-                context['winner'] = 'user'
-                context['game_finished'] = True
-                context['victories'] += 1
-                return generate_response(req, f'Сделаю вид, что вы взяли {user_motion[0] + chips[0]}'
-                                              f'Поздравляю, вы победили. Не хотите сыграть ещё?')
+                if chips[0] == 0:
+                    return generate_response(req, 'Ну вот, вы не оставили мне камней, вы победили. '
+                                                  'Не хотите сыграть ещё?')
+                else:
+                    return generate_response(req, f'Сделаю вид, что вы взяли {user_motion[0] + chips[0]}'
+                                                  f'Поздравляю, вы победили. Не хотите сыграть ещё?')
             else:
                 Alice_motion = generate_motion(1, chips, chips_out=chips_out)
                 if chips[0] in range(1, 5):
@@ -264,16 +285,21 @@ def main():
                 text += f'Беру {Alice_motion[1]} из {Alice_motion[0]}-ой. Остаётся {chips[0]} и {chips[1]}.'
             return generate_response(req, text)
 
-    elif context['mode'] == 'игра' and context['game_finished'] and context['winner'] == 'user':
+    elif context['mode'] == 'игра' and context['game_finished'] and context['winner'] == 'user' or \
+            context['mode'] == 'обучение' and context['tng_finished'] and context['want_to_play']:
+        #*тут была
         if answer == 'да' or answer == 'хочу' or answer == 'давай сыграем' or answer == 'давай':
+            # сценарий перезапуска игры после победы в игре с алисой
             context['mode'] = 'игра'
             context['kuchki'] = 0
             context['winner'] = None
             context['game_finished'] = False
             context['first_motion'] = False
             context['first_game'] = False
+            context['want_to_play'] = False  # *
             return generate_response(req, 'На сколько куч играем?')
         else:
+            #выход из сессии
             result = f'Отлично, я тоже не очень хотела. '
             wins, defs = context['victories'], context['defeats']
             if wins > defs:
@@ -284,17 +310,29 @@ def main():
                 result += f'Счёт на сегодня {wins}:{defs}. Победила дружба. '
             return generate_response(req, result, end_session=True)
 
-    elif context['game_finished'] and context['winner'] == 'Alice' and context['mode'] == 'игра':
+    elif context['mode'] == 'игра' and context['game_finished'] and context['winner'] == 'Alice' or \
+            context['mode'] == 'обучение' and context['tng_finished'] and context['want_to_learn']:
         if answer == 'да' or answer == 'хочу' or answer == 'включи' or answer == 'давай':
-            context['mode'] = 'обучение'
-            context['kuchki'] = 0
-            context['winner'] = None
-            context['game_finished'] = False
-            context['first_motion'] = False
-            return generate_response(req, "Так и быть, включаю режим обучения. "
-                                          "Для начала выберите количество кучек: одна или две.")
+            # сценарий перехода к обучению после проигрыша в игре с алисой
+            if context['mode'] == 'игра':
+                context['mode'] = 'обучение'
+                context['kuchki'] = 0
+                context['winner'] = None
+                context['game_finished'] = False
+                context['first_motion'] = False
+                return generate_response(req, "Так и быть, включаю режим обучения. "
+                                              "Для начала выберите количество кучек: одна или две.")
+            if context['mode'] == 'обучение':
+                # сценарий запуска обучения с другим числом кучек
+                pass
+        elif context['mode'] == 'обучение' and (answer == 'нет' or answer == 'не хочу'):
+            # сценарий, при котором игрок откаался от второго обучения, алиса спрашивает хочет ли он поиграть
+            context['want_to_learn'] = False
+            context['want_to_play'] = True
+            return generate_response(req, '')
         elif answer == 'нет, запусти новую игру' or answer == 'давай сыграем ещё раз' or answer == 'хочу реванш' or \
                 answer == 'реванш':
+            # сценарий переапуска игры после проигрыша в игре с алисой
             context['mode'] = 'игра'
             context['kuchki'] = 0
             context['winner'] = None
@@ -303,10 +341,11 @@ def main():
             context['first_game'] = False
             return generate_response(req, 'На сколько куч играем?')
         else:
+            # выход из сесси
             result = f'Было приятно с вами поиграть. '
             wins, defs = context['victories'], context['defeats']
             if wins > defs:
-                result += f'Счёт на сегодня {wins}:{defs} в вашу пользу.'  # дополнить прощание
+                result += f'Счёт на сегодня {wins}:{defs} в вашу пользу.'  #дополнить прощание
             elif context['victories'] < context['defeats']:
                 result += f'Счёт на сегодня {wins}:{defs} в мою пользу.'
             else:
