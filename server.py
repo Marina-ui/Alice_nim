@@ -15,7 +15,7 @@ def main():
     user_id = req["session"]["user_id"]
 
     if req["session"]["new"]:
-        storage[user_id] = {'victories': 0, 'defeats': 0, 'mode': 'new'}   #можно будет подвести итог всем играм
+        storage[user_id] = {'victories': 0, 'defeats': 0, 'mode': 'new'}   # можно будет подвести итог всем играм
         return generate_response(req, "Пожалуйста, выберите режим из списка: Обучение, Игра с Алисой.")
 
     context = storage[user_id]
@@ -38,7 +38,7 @@ def main():
                        'Не у всех получается обыграть наш мега-компьютер, '
                        'даже некоторые создатели этого навыка испытывают проблемы в игре!']
 
-    if answer not in {'обучение', 'игра с алисой'} and context['mode'] == 'new':
+    if answer not in {'обучение', 'игра с алисой', 'игра'} and context['mode'] == 'new':
         return generate_response(req, "Необходимо выбрать режим из списка.")
 
     if answer == 'обучение' and context['mode'] == 'new' or \
@@ -55,7 +55,7 @@ def main():
         context['first_learn_game'] = True
         return generate_response(req, "Выберите количество кучек для обучения: одна или две.")
 
-    elif answer == 'игра с алисой' and context['mode'] == 'new':
+    elif (answer == 'игра с алисой' or answer == 'игра') and context['mode'] == 'new':
         # создаём контекст игры, запрашиваем кол-во кучек
         context['mode'] = 'игра'
         context['kuchki'] = 0
@@ -63,6 +63,7 @@ def main():
         context['game_finished'] = False
         context['first_motion'] = False
         context['first_game'] = True
+        context['no_learn_game'] = True
         return generate_response(req, 'Всегда рада с вами поиграть. Выберите количество кучек: одна или две')
 
     elif (answer == 'одна' or answer == 'одна кучка') and context['kuchki'] == 0 and (context['mode'] == 'игра' or
@@ -276,7 +277,7 @@ def main():
                 if chips[0] in range(2, 5):
                     result += f'Осталось {chips[0]} камня. '
                 elif chips[0] == 1:
-                    result += f'Остался 1 камень'
+                    result += f'Остался 1 камень. '
                 else:
                     result += f'Осталось {chips[0]} камней. '
                 context['chips'][0] -= Alice_motion[1]
@@ -420,6 +421,9 @@ def main():
                 context['game_finished'] = False
                 context['first_motion'] = False
                 context['ask_for_learn'] = False
+                if context['no_learn_game']:
+                    context['onek_tng_finished'] = False
+                    context['twok_tng_finished'] = False
                 if context['kuchki'] == 1:
                     text = f'Тогда включаю режим обучения для одной кучки. '
                 elif context['kuchki'] == 2:
@@ -436,9 +440,6 @@ def main():
             context['patience'] = 3
             context['efforts'] = 1
             context['ask_for_learn'] = False
-            if context['first_learn_game']:
-                context['onek_tng_finished'] = False
-                context['twok_tng_finished'] = False
             if context['kuchki'] == 1:
                 context['chips'] = [r.randint(15, 20)]  # диапазон камней, одна куча, обучение
                 context['max_chips_out'] = r.randint(3, 5)  # максимальное кол-во забираемых камней
