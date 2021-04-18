@@ -16,7 +16,7 @@ def main():
 
     if req["session"]["new"]:
         storage[user_id] = {'victories': 0, 'defeats': 0, 'mode': 'new'}   # можно будет подвести итог всем играм
-        return generate_response(req, "Пожалуйста, выберите режим из списка: Обучение, Игра с Алисой.")
+        return gen_but_resp(req, "Пожалуйста, выберите режим из списка: Обучение, Игра с Алисой.")
 
     context = storage[user_id]
     answer = req["request"]["original_utterance"].lower()
@@ -39,7 +39,7 @@ def main():
                        'даже некоторые создатели этого навыка испытывают проблемы в игре!']
 
     if answer not in {'обучение', 'игра с алисой', 'игра'} and context['mode'] == 'new':
-        return generate_response(req, "Необходимо выбрать режим из списка.")
+        return gen_but_resp(req, "Необходимо выбрать режим из списка.")
 
     if answer == 'обучение' and context['mode'] == 'new' or \
             answer == 'Алиса, включи обучение' and context['mode'] == 'игра' and context['game_finished']:
@@ -441,7 +441,7 @@ def main():
 
     elif context['mode'] == 'игра' and context['game_finished'] and context['winner'] == 'Alice' or \
             context['mode'] == 'обучение' and context['tng_finished'] and context['ask_for_learn']:
-        if answer == 'да' or answer == 'хочу' or answer == 'включи' or answer == 'давай':
+        if answer == 'да' or answer == 'хочу' or answer == 'включи' or answer == 'давай'  or answer == 'обучение':
             # сценарий перехода к обучению после проигрыша в игре с алисой/запуска обучения с другим числом кучек
             if context['mode'] == 'игра':
                 context['mode'] = 'обучение'
@@ -509,7 +509,7 @@ def main():
             context['ask_for_play'] = True
             return generate_response(req, 'Может тогда сыграем?')
         elif answer == 'нет, запусти новую игру' or answer == 'давай сыграем ещё раз' or answer == 'хочу реванш' or \
-                answer == 'реванш':
+                answer == 'реванш' or answer == 'сыграем ещё раз' or answer == 'новая игра':
             # сценарий переапуска игры после проигрыша в игре с алисой
             context['mode'] = 'игра'
             context['kuchki'] = 0
@@ -535,6 +535,30 @@ def main():
         return generate_response(req, 'Неправильный формат ответа. Пожалуйста, повторите.')
 
 
+
+def gen_but_resp(req, text, end_session=False):
+    res = {
+        "version": req["version"],
+        "session": req["session"],
+        "response": {
+            "end_session": end_session,
+            "text": text,
+            "buttons": [
+                {
+                    "title": "Обучение",
+                    "hide": True
+                },
+                {
+                    "title": "Игра с Алисой",
+                    "hide": True
+                },
+            ],
+        },
+
+    }
+    return json.dumps(res, indent=2)
+
+
 def generate_response(req, text, audio_id='', image_id='', end_session=False):
     if audio_id == 'W':
         res = {
@@ -543,8 +567,17 @@ def generate_response(req, text, audio_id='', image_id='', end_session=False):
             "response": {
                 "end_session": end_session,
                 "text": text,
-                "tts": '<speaker audio="alice-sounds-game-win-1.opus"> ого! вы не оставили мне камней, '
-                       'вы победили. Не хотите сыграть ещё?'
+                "tts": '<speaker audio="alice-sounds-game-win-1.opus"> ого! вы не оставили мне камней, вы победили. Не хотите сыграть ещё?',
+                "buttons": [
+                    {
+                        "title": "Выход",
+                        "hide": True
+                    },
+                    {
+                        "title": "Новая игра",
+                        "hide": True
+                    },
+                ],
             }
         }
 
@@ -555,8 +588,19 @@ def generate_response(req, text, audio_id='', image_id='', end_session=False):
             "response": {
                 "end_session": end_session,
                 "text": text,
-                "tts": 'Я забираю последние. <speaker audio="alice-sounds-game-loss-2.opus"> '
-                       'И снова я победила! Не хотите выбрать режим обучения?'
+                "tts": 'Я забираю последние. <speaker audio="alice-sounds-game-loss-2.opus"> И снова я победила! Не хотите выбрать режим обучения?',
+                "buttons": [
+                    {
+                        "title": "Обучение",
+                        "hide": True
+                    },
+                    {
+                        "title": "Новая игра",
+                        "hide": True
+                    },
+                ],
+            },
+
             }
         }
 
@@ -584,9 +628,6 @@ def generate_response(req, text, audio_id='', image_id='', end_session=False):
                 "end_session": end_session,
                 "text": text
             },
-            "session_state": {
-                "value": 10
-            }
         }
     return json.dumps(res, indent=2)
 
