@@ -325,10 +325,13 @@ def main():
             elif ('беру вс' in answer or 'забираю вс' in answer):
                 # если ответ просто "беру все" нужно сказать игроку, что он не может так ходить.
                 return generate_response(req, f'Вы можете взять максимум {chips[0]} или {chips[1]} камней '
-                                              f'из первой или второй кучи. ')
+                                              f'из первой или второй кучи. ')                                                                                #ПРАВИЛ ТУТ
             elif len(user_motion) == 4 and user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] and user_motion[2].lower() == 'из'\
                     and user_motion[1].isdigit():
                 umotion, kuchka = int(user_motion[1]), user_motion[3]
+            elif (len(user_motion) == 5 or len(user_motion) == 6 and 'куч' in user_motion[5].lower()) and user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] and 'камн' in user_motion[2].lower() \
+                    and user_motion[3].lower() == 'из' and user_motion[1].isdigit():
+                umotion, kuchka = int(user_motion[1]), user_motion[4]
             elif len(user_motion) == 3 and user_motion[0].isdigit() and user_motion[1] == 'из':
                 umotion, kuchka = int(user_motion[0]), user_motion[2]
             else:
