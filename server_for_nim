@@ -53,6 +53,7 @@ def main():
         context['patience'] = 3
         context['efforts'] = 1 #*
         context['first_learn_game'] = True
+        context['no_learn_game'] = False
         return generate_response(req, "Выберите количество кучек для обучения: одна или две.")
 
     elif (answer == 'игра с алисой' or answer == 'игра') and context['mode'] == 'new':
@@ -462,8 +463,12 @@ def main():
                 context['first_motion'] = False
                 context['ask_for_learn'] = False
                 if context['no_learn_game']:
+                    context['first_learn_game'] = True
                     context['onek_tng_finished'] = False
                     context['twok_tng_finished'] = False
+                    context['no_learn_game'] = False
+                else:
+                    context['first_learn_game'] = False
                 if context['kuchki'] == 1:
                     text = f'Тогда включаю режим обучения для одной кучки. '
                 elif context['kuchki'] == 2:
