@@ -151,7 +151,7 @@ def main():
                 context['chips'][motion[0] - 1] -= motion[1]
                 rules += f'Давайте я начну. Беру {motion[1]} из {motion[0]}-ой кучи. ' \
                          f'Осталось {chips[0]} в первой и {chips[1]} во второй. ' \
-                         f'Теперь ваш ход. Назовите количество забираемых камней, затем номер кучи.'
+                         f'Теперь ваш ход. Назовите количество забираемых камней, затем из какой кучи.'
                 context['first_motion'] = True
             return generate_response(req, rules)
 
@@ -185,22 +185,24 @@ def main():
              in answ_let_to_num.keys() or (req["request"]["nlu"]["tokens"][0].isdigit() and
               int(req["request"]["nlu"]["tokens"][0]) in answ_let_to_num.values())):      #поменять условие проверки, чтобы разнообразить возможные фразы
         # обрабатываем ход игрока
-        print('WEE TTUTt')
+        print('WE')
         user_motion = req["request"]["nlu"]["tokens"]
         kuchki = context['kuchki']
         chips = context['chips']
         if user_motion[0] in answ_let_to_num.keys():
             user_motion[0] = answ_let_to_num.get(user_motion[0])
-        elif user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] and user_motion[1] in answ_let_to_num.keys():                    #I FIXED HERE
+        elif user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] and user_motion[1] in answ_let_to_num.keys():
+            print('WEE TTUTt')                   #I FIXED HERE
             user_motion[1] = answ_let_to_num.get(user_motion[1])
 
         if len(user_motion) == 1 and kuchki > 1:
             return generate_response(req, 'Вы не назвали номер кучки. '
                                           'Скажите ещё раз сколько вы берёте камней, затем из какой кучки.')
-        elif len(user_motion) > 2 and kuchki == 1 and 'забираю последн' not in answer and 'беру последн' not in answer:        #*
+        elif len(user_motion) > 3 and kuchki == 1 and 'забираю последн' not in answer and 'беру последн' not in answer:        #*
             return generate_response(req, 'Назовите только количество камней.')
         elif kuchki == 1:              #поправить условие, чтобы можно было говорить "беру * камней" и т.п
             chips_out = context['max_chips_out']
+            print('ttut')
             if ('забираю последн' in answer or 'беру последн' in answer) and chips[0] > chips_out or \
                     user_motion[0].isdigit() and int(user_motion[0]) > chips_out:
                 text = f'Жадность - хороший завтрак, но плохой ужин (по Вольтеру). '
@@ -214,6 +216,14 @@ def main():
             #поправить, когда будем проверять на фразы
             elif len(user_motion) == 2 and user_motion[0] in ['беру', 'взял', 'забираю', 'взяла']:
                 user_motion[0] = int(user_motion[1])
+
+            elif len(user_motion) == 1:
+                user_motion[0] = int(user_motion[0])
+
+            elif len(user_motion) == 3 and user_motion[2] == 'камня' or user_motion[2] == 'камней' or user_motion[2] == 'камень' and user_motion[0] in ['беру', 'взял', 'забираю', 'взяла']:
+                user_motion[0] = int(user_motion[1])
+            else:
+                return generate_response(req, 'Неправильный формат ответа. Пожалуйста, повторите.')
             user_motion[0] = int(user_motion[0])
             context['chips'][0] -= user_motion[0]
             if (chips[0] <= 0 or 'забираю последн' in answer or 'беру последн' in answer) and \
@@ -329,9 +339,19 @@ def main():
             elif len(user_motion) == 4 and user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] and user_motion[2].lower() == 'из'\
                     and user_motion[1].isdigit():
                 umotion, kuchka = int(user_motion[1]), user_motion[3]
-            elif (len(user_motion) == 5 or len(user_motion) == 6 and 'куч' in user_motion[5].lower()) and user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] and 'камн' in user_motion[2].lower() \
-                    and user_motion[3].lower() == 'из' and user_motion[1].isdigit():
+
+            elif len(user_motion) == 5 and 'куч' in user_motion[4].lower() and user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] \
+                    and user_motion[2].lower() == 'из' and user_motion[1].isdigit():
+                umotion, kuchka = int(user_motion[1]), user_motion[3]
+
+            elif len(user_motion) == 5 and user_motion[4].isdigit() and user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] \
+                    and user_motion[3].lower() == 'из' and user_motion[1].isdigit() and user_motion[2] == 'камень' or user_motion[2] == 'камней' or user_motion[2] == 'камня':
                 umotion, kuchka = int(user_motion[1]), user_motion[4]
+
+            elif len(user_motion) == 6 and 'куч' in user_motion[5].lower() and user_motion[0].lower() in ['беру', 'взял', 'забираю', 'взяла'] \
+                    and user_motion[3].lower() == 'из' and user_motion[1].isdigit() and user_motion[2] == 'камень' or user_motion[2] == 'камней' or user_motion[2] == 'камня':
+                umotion, kuchka = int(user_motion[1]), user_motion[4]
+
             elif len(user_motion) == 3 and user_motion[0].isdigit() and user_motion[1] == 'из':
                 umotion, kuchka = int(user_motion[0]), user_motion[2]
             else:
