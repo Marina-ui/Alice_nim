@@ -453,7 +453,7 @@ def main():
 
     elif context['mode'] == 'игра' and context['game_finished'] and context['winner'] == 'Alice' or \
             context['mode'] == 'обучение' and context['tng_finished'] and context['ask_for_learn']:
-        if answer == 'да' or answer == 'хочу' or answer == 'включи' or answer == 'давай':
+        if answer == 'да' or answer == 'хочу' or answer == 'включи' or answer == 'давай'  or answer == 'обучение':
             # сценарий перехода к обучению после проигрыша в игре с алисой/запуска обучения с другим числом кучек
             if context['mode'] == 'игра':
                 context['mode'] = 'обучение'
@@ -517,7 +517,7 @@ def main():
             context['ask_for_play'] = True
             return generate_response(req, 'Может тогда сыграем?')
         elif answer == 'нет, запусти новую игру' or answer == 'давай сыграем ещё раз' or answer == 'хочу реванш' or \
-                answer == 'реванш' or answer == 'сыграем ещё раз':
+                answer == 'реванш' or answer == 'сыграем ещё раз' or answer == 'новая игра':
             # сценарий переапуска игры после проигрыша в игре с алисой
             context['mode'] = 'игра'
             context['kuchki'] = 0
@@ -578,11 +578,11 @@ def generate_response(req, text, audio_id='', image_id='', end_session=False):
                 "tts": '<speaker audio="alice-sounds-game-win-1.opus"> ого! вы не оставили мне камней, вы победили. Не хотите сыграть ещё?',
                 "buttons": [
                     {
-                        "title": "Нет",
+                        "title": "Выход",
                         "hide": True
                     },
                     {
-                        "title": "Хочу",
+                        "title": "Новая игра",
                         "hide": True
                     },
                 ],
@@ -599,11 +599,11 @@ def generate_response(req, text, audio_id='', image_id='', end_session=False):
                 "tts": 'Я забираю последние. <speaker audio="alice-sounds-game-loss-2.opus"> И снова я победила! Не хотите выбрать режим обучения?',
                 "buttons": [
                     {
-                        "title": "Хочу",
+                        "title": "Обучение",
                         "hide": True
                     },
                     {
-                        "title": "сыграем еще раз",
+                        "title": "Новая игра",
                         "hide": True
                     },
                 ],
