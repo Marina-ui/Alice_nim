@@ -52,7 +52,6 @@ def main():
 
     if context['mode'] != 'new':
         answer_list = list(filter(lambda word: word not in phrase_list, answer_list))
-    print(answer_list, answer)
 
     if answer not in {'обучение', 'игра с алисой', 'игра'} and context['mode'] == 'new':
         return gen_but_resp(req, 'Необходимо выбрать режим из списка.', 'Обучение', 'Игра с Алисой')
