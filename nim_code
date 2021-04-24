@@ -30,7 +30,7 @@ def main():
                        'двадцать': 20, 'двадцать один': 21, 'двадцать два': 22, 'двадцать три': 23,
                        'двадцать четыре': 24, 'двадцать пять': 25}
     phrase_list = ['я', 'беру', 'взял', 'забираю', 'взяла', 'камни', 'камней', 'камням', 'камнями', 'камнях', 'камня',
-                   'камень', 'куча', 'кучи', 'кучка', 'кучки', 'из']
+                   'камень', 'куча', 'кучи', 'кучка', 'кучки', 'из', 'возьму']
     greedy_sayings = [f'Жадность - хороший завтрак, но плохой ужин (по Вольтеру). ',
                       f'Подарите ему весь мир, и он потребует еще оберточную бумагу (Жюльен де Фалкенарё). ',
                       f'Жажда наживы не создала еще ни одного художника, но погубила многих. (У. Олстон). ',
@@ -38,21 +38,21 @@ def main():
                       f'Жадность заключается в желании иметь более, чем необходимо (Аврелий Августин). ',
                       f'Жадность - не сон, подождет (Бузина М.). ',
                       f'Жадный король сам играет свою свиту (Теткоракс). ']
-    facts_about_nim = ['Китайская игра ним упоминалась европейцами ещё в XVI веке.',
-                       'Имя «ним» было дано игре американским математиком Чарльзом Бутоном.',
-                       'Чарльз Бутон описал в 1901 году выигрышную стратегию для игры.',
+    facts_about_nim = ['Китайская игра ним упоминалась европейцами ещё в XVI веке. ',
+                       'Имя «ним» было дано игре американским математиком Чарльзом Бутоном. ',
+                       'Чарльз Бутон описал в 1901 году выигрышную стратегию для игры. ',
                        'Есть несколько вариантов происхождения названия игры: первое - от '
                        'немецкого глагола nehmen или от староанглийского глагола Nim, имеющих значение «брать»'
-                       ' и второе - от английского глагола Win.',
+                       ' и второе - от английского глагола Win. ',
                        'Эта игра служит метафорой происходящего в фильме «В прошлом году в Мариенбаде». '
-                       'Кстати, советую посмотреть!',
+                       'Кстати, советую посмотреть. ',
                        'Не у всех получается обыграть наш мега-компьютер, '
-                       'даже некоторые создатели этого навыка испытывают проблемы в игре!', '', '', '', '']
+                       'даже некоторые создатели этого навыка испытывают проблемы в игре! ']
     bye_phr_l = ['До новых встреч!', 'Пришло время прощаться. До скорого!', 'На сегодня все. До свидания!', '']
 
     if context['mode'] != 'new':
         answer_list = list(filter(lambda word: word not in phrase_list, answer_list))
-
+    print(answer_list, answer)
 
     if answer not in {'обучение', 'игра с алисой', 'игра'} and context['mode'] == 'new':
         return gen_but_resp(req, 'Необходимо выбрать режим из списка.', 'Обучение', 'Игра с Алисой')
@@ -111,7 +111,7 @@ def main():
             text = f'Правила в игре с одной кучкой просты: задаётся начальное количество камней в куче. ' \
                    f'Вы можете брать некоторое m количество этих камней. Выигрывает тот, кто забирает последний. ' \
                    f'Чтобы выиграть в такой игре, вам нужно брать столько камней, ' \
-                   f'чтобы их оставшееся количество делилось на m + 1. Давайте потренируемся. ' \
+                   f'чтобы их оставшееся количество перед последним ходом было на 1 больше максимального. Давайте потренируемся. ' \
                    f'В нашей куче {chips[0]} {stones}. Можно брать от 1 до {chips_out} камней. '
             context['chips'][0] -= motion[1]
             text += f'Я возьму {motion[1]}, и останется {chips[0]}. Теперь сделайте свой ход.'
@@ -127,7 +127,7 @@ def main():
         if context['mode'] == 'игра':
             if context['first_game']:
                 return gen_but_resp(req, 'Две, так две. Вам объяснить правила?', fbut='Да', sbut='Нет')
-            text = f'В первой {chips[0]} камней, во второй {chips[1]}.'
+            text = f'В первой {chips[0]} камней, во второй {chips[1]}. '
             context['chips'][motion[0] - 1] -= motion[1]
             text += f'Беру {motion[1]} из {motion[0]}-ой кучи. ' \
                     f'Осталось {chips[0]} и {chips[1]}. Ходите.'
@@ -140,8 +140,8 @@ def main():
             text += f'задаётся начальное количество камней в двух кучах. ' \
                     f'Вы можете брать любое количество камней из любой одной кучи. ' \
                     f'Выигрывает тот, кто забирает последние. ' \
-                    f'Чтобы выиграть в такой игре, вам нужно брать столько камней, ' \
-                    f'чтобы их оставшееся количество в обоих кучах было одинаково. Давайте потренируемся. ' \
+                    f'Чтобы выиграть в такой игре, вам нужно всегда оставлять камни в обеих кучах, ' \
+                    f'иначе Алиса сразу выиграет. Давайте потренируемся. ' \
                     f'В нашей первой куче {chips[0]} {stones}, а во второй {chips[1]}. '
             context['chips'][motion[0] - 1] -= motion[1]
             text += f'Беру {motion[1]} из {motion[0]}-ой. Остаётся {chips[0]} и {chips[1]} камней. ' \
@@ -149,9 +149,35 @@ def main():
         context['first_motion'] = True
         return generate_response(req, text)
 
+    elif context['mode'] == 'игра' and not context['game_finished'] and context['first_motion'] and \
+            answer in ['алиса, какой счёт', 'какой счёт', 'счёт', 'скажи счёт', 'алиса, скажи счёт',
+                       'алиса, скажи, какой счёт', 'скажи, какой счёт']:
+        wins, defs = context['victories'], context['defeats']
+        if wins == defs == 0:
+            score = f'Пока что наш счёт {wins}:{defs}. '
+        elif wins == defs:
+            score = f'Наш счёт {wins}:{defs} в ничью. '
+        elif wins > defs:
+            score = f'Наш счёт {wins}:{defs} в вашу пользу. '
+        else:
+            score = f'Наш счёт {wins}:{defs} в мою пользу. '
+        score += f'Сделайте свой ход.'
+        return generate_response(req, score)
+
+    elif (context['mode'] == 'игра' and not context['game_finished'] or
+          context['mode'] == 'обучение' and not context['tng_finished']) and context['first_motion'] and \
+            answer in ['алиса, расскажи интересный факт про ним', 'интересный факт про ним',
+                       'расскажи интересный факт про ним', 'скажи интересный факт',
+                       'расскажи что-нибудь иннтересное про ним', 'расскажи что-нибудь интересное',
+                       'алиса, расскажи интересный факт', 'интересный факт']:
+        fact = r.choice(facts_about_nim)
+        fact += f'Давайте продолжим игру, сделайте свой ход.'
+        return generate_response(req, fact)
+
     elif (answer in ['да', 'объясни'] and context['mode'] == 'игра' and context['kuchki'] != 0 and
             context['first_game'] and not context['game_finished']) or \
-            answer == 'Алиса, объясни правила' and context['kuchki'] != 0:
+            (answer in ['алиса, объясни правила', 'объясни правила', 'правила'] and
+             context['kuchki'] != 0 and not context['game_finished']):
         # объясняем правила для 1 и 2 куч, Алиса делает первый ход
         kuchki = context['kuchki']
         if kuchki == 1:
@@ -159,9 +185,11 @@ def main():
             chips_out = context['max_chips_out']
             motion = generate_motion(1, chips, chips_out=chips_out, first_motion=True)
             stones = declination(chips[0], 'камень')
-            rules = f'Объясняю: всего {chips[0]} {stones} в куче. Мы по очереди берём от 1 до {chips_out} камней. ' \
-                    f'Вам нужно назвать только количество камней. Выиграет тот, кто заберёт последний. '
-            if answer != 'Алиса, объясни правила':
+            rules = f'Объясняю: в куче {chips[0]} {stones}. Мы по очереди берём от 1 до {chips_out} камней. ' \
+                    f'Вам нужно назвать количество забираемых камней. Выиграет тот, кто заберёт последний. '
+            if answer in ['алиса, объясни правила', 'объясни правила', 'правила']:
+                rules += f'Сейчас ваш ход.'
+            else:
                 context['chips'][0] -= motion[1]
                 rules += f'Давайте я начну. Беру {motion[1]}. Осталось {chips[0]}. ' \
                     f'Теперь ваш ход. Сколько камней вы забираете?'
@@ -174,7 +202,9 @@ def main():
             rules = f'Объясняю: всего две кучи, в первой {chips[0]} {stones}, во второй - {chips[1]}. ' \
                     f'Мы по очереди берём из любой кучи любое количество камней. ' \
                     f'Выиграет тот, кто заберёт последний камень. '
-            if answer != 'Алиса, объясни правила':
+            if answer in ['алиса, объясни правила', 'объясни правила', 'правила']:
+                rules += f'Сейчас ваш ход.'
+            else:
                 context['chips'][motion[0] - 1] -= motion[1]
                 rules += f'Давайте я начну. Беру {motion[1]} из {motion[0]}-ой кучи. ' \
                          f'Осталось {chips[0]} в первой и {chips[1]} во второй. ' \
@@ -208,13 +238,11 @@ def main():
 
     elif (answer and context['mode'] == 'игра' and context['first_motion'] and not context['game_finished'] or
           context['mode'] == 'обучение' and context['first_motion']) and \
-            (len(answer_list) == 2 and ((answer_list[0].lower() in ['последние', 'все', 'всё', 'последний'] or
-                                        answer_list[0].lower() in answ_let_to_num.keys() or answer_list[0].isdigit())
-                                        and answer_list[1] in ['первая', 'первой', 'вторая', 'второй', '1', '2'] or
-                                        (answer_list[1].lower() in ['последние', 'все', 'всё', 'последний'] or
+            (len(answer_list) == 2 and (answer_list[0].lower() in ['последние', 'все', 'всё', 'последний'] or
+                                        answer_list[0].lower() in answ_let_to_num.keys() or answer_list[0].isdigit() or
+                                        answer_list[1].lower() in ['последние', 'все', 'всё', 'последний'] or
                                         answer_list[1].lower() in answ_let_to_num.keys() or
                                         answer_list[1].isdigit() and int(answer_list[1]) in answ_let_to_num.values())
-                                        and answer_list[0] in ['первая', 'первой', 'вторая', 'второй', '1', '2'])
              or len(answer_list) == 1 and
              (answer_list[0].lower() in ['последние', 'все', 'всё', 'последний'] or
               answer_list[0].lower() in answ_let_to_num.keys() or
@@ -225,14 +253,22 @@ def main():
 
         if kuchki == 1 and len(answer_list) > 1:
             return generate_response(req, 'Назовите количество забираемых камней.')
-        elif kuchki == 2 and len(answer_list) == 2 and answer_list[1] != '1' and answer_list[1] != '2':
-            return generate_response(req, 'Вы можете брать только из первой или второй кучи. '
+        elif kuchki == 2 and len(answer_list) < 2 and \
+                (answer_list[0].lower() in ['последние', 'все', 'всё', 'последний'] and
+                 chips[0] != 0 and chips[1] != 0 or
+                 answer_list[0].lower() not in ['последние', 'все', 'всё', 'последний'] and
+                 'перв' not in answer and 'втор' not in answer and '1' not in answer and '2' not in answer):
+            return generate_response(req, 'Вы не назвали номер кучки. '
                                           'Назовите ещё раз количество камней и номер кучи.')
         elif kuchki == 2 and len(answer_list) < 2 and \
-                answer_list[0].lower() not in ['последние', 'все', 'всё', 'последний']:
-            return generate_response(req, 'Вы не назвали номер кучки. '
-                                          'назовите ещё раз количество камней и номер кучи.')
-
+                (answer_list[0] in ['первая', 'первой', 'вторая', 'второй', '1', '2']):
+            return generate_response(req, 'Вы не назвали количество камней. '
+                                          'Назовите ещё раз количество камней и номер кучи.')
+        elif kuchki == 2 and len(answer_list) == 2 and ('перв' not in answer and 'втор' not in answer and
+                                                        '1' not in answer and '2' not in answer):
+            return generate_response(req, 'Вы неверно назвали номер кучки: '
+                                          'вы можете брать камни только из первой или второй кучки. '
+                                          'Назовите ещё раз количество камней и номер кучи.')
         elif kuchki == 1 and len(answer_list) == 1:
             chips_out = context['max_chips_out']
             user_motion = answer_list[0].lower()
@@ -290,9 +326,13 @@ def main():
                             f'У вас {ushlo} на это всего лишь {efforts} {attempts}. ' \
                             f'Не хотите теперь пройти обучение с двумя?'
                     context['ask_for_learn'] = True
-                else:
-                    text += f'Как говориться, повторенье - мать ученья. Не хотите теперь сыграть? '
+                elif context['twok_tng_finished'] and not context['first_learn_game']:
+                    text += f'Вы снова успешно прошли обучение. Не хотите теперь сыграть? '
                     context['ask_for_play'] = True
+                elif not context['twok_tng_finished'] and not context['first_learn_game']:
+                    text += f'Как говориться, повторенье - мать ученья. ' \
+                            f'Не хотите теперь пройти обучение с двумя кучами? '
+                    context['ask_for_learn'] = True
                 context['first_learn_game'] = False
                 return generate_image_response(req, text, image_id=image_id)
             elif chips[0] <= 0 and context['mode'] == 'игра':
@@ -300,7 +340,7 @@ def main():
                 context['game_finished'] = True
                 context['victories'] += 1
                 if chips[0] == 0:
-                    if context['onek_tng_finished']:
+                    if not context['no_learn_game'] and context['onek_tng_finished']:
                         result = f'Надо же, вы победили! Где вы научились так играть? Сыграем ещё?'
                     else:
                         result = f'Ну вот, вы не оставили мне камней, вы победили. Не хотите сыграть ещё?'
@@ -308,10 +348,10 @@ def main():
                     result = f'Сделаю вид, что вы взяли {chips[0] + user_motion}. ' \
                              f'Поздравляю, вы победили. Не хотите сыграть ещё? '
                 context['ask_for_play'] = True
-                return gen_but_resp(req, result, fbut='Новая игра', sbut='Выход', audio_id='W')
+                return gen_but_resp(req, result, fbut='Новая игра', sbut='Обучение', thbut='Выход', audio_id='W')
             elif context['mode'] == 'обучение' and chips[0] % (chips_out + 1) != 0:
                 # Алиса в режиме обучения ругает пользователя за неправильный ход, убавляются очки терпения
-                context['patience'] -= 1  #Можно сделать так, чтобы при неодинаковых начениях терпения Алиса отвечала по-разному
+                context['patience'] -= 1
                 if context['patience'] == 0:
                     # если терпения не осталось, Алиса начинает обучение сначала,
                     # счётчик попыток пройти обучение увеличивается
@@ -331,17 +371,23 @@ def main():
                     text += f'Я сделаю так, чтобы вы смогли выиграть, и возьму {motion[1]}. Останется {chips[0]}. ' \
                             f'Теперь ваш ход: сколько вы забираете? '
                     return generate_response(req, text)
+                elif context['patience'] == 2:
+                    text = f'Вы должны привести кучу в такое состояние,' \
+                           f' чтобы оно делилось на максимальное количество забираем камней + 1. В нашем случае это {chips_out + 1}.' \
+                           f' Попробуйте сходить еще раз.'
+                elif context['patience'] == 1:
+                    stones = declination(user_motion, 'камень')
+                    text = f'Если вы возьмёте {user_motion} {stones}, ' \
+                           f'то в куче останется {chips[0]} - число, некратное {chips_out + 1}. Попробуйте ещё раз.'
                 context['chips'][0] += user_motion
-                return generate_response(req, f'Вы должны привести кучу в такое состояние,'
-                                              f' чтобы оно делилось на {chips_out + 1}. Попробуйте сходить еще раз.')
+                return generate_response(req, text)
             else:
                 Alice_motion = generate_motion(1, chips, chips_out=chips_out)
                 if context['mode'] == 'обучение':
                     # Алиса в режиме обучения хвалит игрока за правильный ответ
                     result = f'Так держать. '
                 elif context['mode'] == 'игра':
-                    facts = r.choice(facts_about_nim)
-                    result = f'{facts} '        #*
+                    result = f''        #*
                 if chips[0] in range(2, 5):
                     result += f'Осталось {chips[0]} камня. '
                 elif chips[0] == 1:
@@ -361,14 +407,15 @@ def main():
                         result += f'Я беру последние. И снова я победила! Не хотите выбрать режим обучения?'
                         audio_id = 'L'
                         context['ask_for_learn'] = True
+                    return gen_but_resp(req, result, fbut='Обучение', sbut='Игра', thbut='Выход', audio_id=audio_id)
                 else:
                     result += f'Я беру {Alice_motion[1]}. Остаётся {chips[0]}.'
                     audio_id = ''
                 return generate_response(req, result, audio_id)
-        elif kuchki == 2 and len(answer_list) == 2:
+        elif kuchki == 2 and len(answer_list) == 2 or answer in ['все', 'всё', 'последние', 'последний']:
             if len(answer_list) == 1:
                 user_motion = answer_list[0].lower()
-                kuchka = r.choice(['1', '2'])
+                kuchka = r.randint(1, 2)
             elif ('первая' in answer or 'первой' in answer) and \
                     (answer_list[0].lower() == '1' or answer_list[1].lower() == '1'):
                 if answer_list[0].lower() == '1':
@@ -404,13 +451,13 @@ def main():
                     context['winner'] = 'user'
                     context['game_finished'] = True
                     context['victories'] += 1
-                    if context['twok_tng_finished']:
+                    if not context['no_learn_game'] and context['twok_tng_finished']:
                         result = f'Вот это победа! Интересно, кто научил вас так играть? Сыграем ещё?'
                     else:
                         result = f'Забирайте, вам нужнее. Поздравляю с победой. ' \
                                  f'Не хотите сыграть ещё?'
                     context['ask_for_play'] = True
-                    return gen_but_resp(req, result, fbut='Новая игра', sbut='Выход', audio_id='W')
+                    return gen_but_resp(req, result, fbut='Новая игра', sbut='Обучение', thbut='Выход', audio_id='W')
                 elif context['mode'] == 'обучение':
                     context['twok_tng_finished'] = True
                     context['tng_finished'] = True
@@ -446,9 +493,13 @@ def main():
                                 f'У вас {ushlo} на это всего лишь {efforts} {attempts}. ' \
                                 f'Не хотите теперь пройти обучение с одной?'
                         context['ask_for_learn'] = True
-                    else:
-                        text += f'Как говориться, повторенье - мать ученья. Не хотите теперь сыграть? '
+                    elif context['onek_tng_finished'] and not context['first_learn_game']:
+                        text += f'Вы снова успешно прошли обучение. Не хотите теперь сыграть? '
                         context['ask_for_play'] = True
+                    elif not context['onek_tng_finished'] and not context['first_learn_game']:
+                        text += f'Как говориться, повторенье - мать ученья. ' \
+                                f'Не хотите теперь пройти обучение с одной кучей? '
+                        context['ask_for_learn'] = True
                     context['first_learn_game'] = False
                     return generate_image_response(req, text, image_id=image_id)
             elif user_motion in ['все', 'всё', 'последние', 'последний']:
@@ -479,12 +530,12 @@ def main():
                     context['winner'] = 'user'
                     context['game_finished'] = True
                     context['victories'] += 1
-                    if context['twok_tng_finished']:
+                    if not context['no_learn_game'] and context['twok_tng_finished']:
                         result = f'Ученик превзошёл мастера! Сыграем ещё?'
                     else:
                         result = f'Ну вот, вы не оставили мне камней, вы победили. Сыграем ещё одну? '
                     context['ask_for_play'] = True
-                    return gen_but_resp(req, result, fbut='Новая игра', sbut='Выход', audio_id='W')
+                    return gen_but_resp(req, result, fbut='Новая игра', sbut='Обучение', thbut='Выход', audio_id='W')
                 elif context['mode'] == 'обучение':
                     context['twok_tng_finished'] = True
                     context['tng_finished'] = True
@@ -520,13 +571,19 @@ def main():
                                 f'У вас {ushlo} на это всего лишь {efforts} {attempts}. ' \
                                 f'Не хотите теперь пройти обучение с одной?'
                         context['ask_for_learn'] = True
-                    else:
-                        text += f'Как говориться, повторенье - мать ученья. Не хотите теперь сыграть? '
+                    elif context['onek_tng_finished'] and not context['first_learn_game']:
+                        text += f'Вы снова успешно прошли обучение. Не хотите теперь сыграть? '
                         context['ask_for_play'] = True
+                    elif not context['onek_tng_finished'] and not context['first_learn_game']:
+                        text += f'Как говориться, повторенье - мать ученья. ' \
+                                f'Не хотите теперь пройти обучение с одной кучей? '
+                        context['ask_for_learn'] = True
                     context['first_learn_game'] = False
                     return generate_image_response(req, text, image_id)
             elif context['mode'] == 'обучение' and chips[0] != chips[1]:
                 # Алиса ругает игрока за неправильный ход
+                context['patience'] -= 1
+                print(context['patience'])
                 if context['patience'] == 0:
                     # если терпения не осталось, Алиса начинает обучение сначала,
                     # счётчик попыток пройти обучение увеличивается
@@ -545,17 +602,18 @@ def main():
                     text += f'Беру {motion[1]} из {motion[0]}-ой. Остаётся {chips[0]} и {chips[1]} {stones}. ' \
                             f'Сделайте свой ход: назовите количество камней и номер кучки.'
                     return generate_response(req, text)
-                context['patience'] -= 1                 #Можно сделать так, чтобы при неодинаковых начениях терпения Алиса отвечала по-разному
+                elif context['patience'] == 2:
+                    text = f'После такого хода Алиса оставит в любой из куч 1 камень, что не позволит Вам выиграть. ' \
+                           f'Попробуйте сходить еще раз.'
+                elif context['patience'] == 1:
+                    text = f'Так и быть, вот главный секрет: сделайте количество камней в кучах одинаковым. Только никому не рассказывайте!'
                 context['chips'][kuchka - 1] += user_motion
-                return generate_response(req, f'Вы должны взять столько, чтобы в кучах осталось равное количество,'
-                                              f' камней. Попробуйте сходить еще раз.')
+                return generate_response(req, text)
             Alice_motion = generate_motion(2, chips)
             if context['mode'] == 'обучение':
                 text = f'Продолжайте в том же духе! '
             elif context['mode'] == 'игра':
-                facts = r.choice(facts_about_nim)
-                text = f'{facts} '
-            text += f''
+                text = f''
             text += f'Осталось {chips[0]} в первой и {chips[1]} во второй. '
             context['chips'][Alice_motion[0] - 1] -= Alice_motion[1]
             if chips[0] == chips[1] == 0:
@@ -565,15 +623,18 @@ def main():
                 context['defeats'] += 1
                 text += f'Я забираю последние. И снова я победила! Не хотите выбрать режим обучения?'
                 audio_id = 'L'
+                return gen_but_resp(req, text, fbut='Обучение', sbut='Игра', thbut='Выход', audio_id=audio_id)
             else:
                 text += f'Беру {Alice_motion[1]} из {Alice_motion[0]}-ой. Остаётся {chips[0]} и {chips[1]}.'
                 audio_id = ''
             return generate_response(req, text, audio_id)
 
-    elif context['mode'] == 'игра' and context['game_finished'] and context['winner'] == 'user' or \
-            context['mode'] == 'обучение' and context['tng_finished'] and context['ask_for_play'] or \
-            context['mode'] == 'игра' and context['game_finished'] and context['ask_for_play']:
-        if answer in ['да', 'хочу', 'давай сыграем', 'давай', 'новая игра']:
+    elif context['mode'] == 'игра' and context['game_finished'] and (context['winner'] == 'user' or
+                                                                     context['ask_for_play'] or
+                                                                     answer in ['игра', 'новая игра', 'выход']) or \
+            context['mode'] == 'обучение' and context['tng_finished'] and (context['ask_for_play'] or
+                                                                           answer in ['игра', 'новая игра', 'выход']):
+        if answer in ['да', 'хочу', 'давай сыграем', 'давай', 'новая игра', 'игра']:
             # сценарий перезапуска игры после победы в игре с алисой
             context['mode'] = 'игра'
             context['kuchki'] = 0
@@ -583,21 +644,30 @@ def main():
             context['first_game'] = False
             context['ask_for_play'] = False
             return gen_but_resp(req, 'На сколько куч играем?', fbut='Одна', sbut='Две')
-        else:
+        elif answer in ['нет', 'не хочу', 'нет, спасибо', 'давай в другой раз', 'выход']:
             # выход из сессии
-            result = f'Отлично, я тоже не очень хотела. '
+            if answer == 'выход':
+                result = f'Спасибо за игру! '
+            else:
+                result = f'Отлично, я тоже не очень хотела. '
             bye = r.choice(bye_phr_l)
             wins, defs = context['victories'], context['defeats']
             if wins > defs:
-                result += f'Счёт на сегодня {wins}:{defs} в вашу пользу. {bye}'      #дополнить прощание
+                result += f'Счёт на сегодня {wins}:{defs} в вашу пользу. {bye}'
             elif context['victories'] < context['defeats']:
                 result += f'Счёт на сегодня {wins}:{defs} в мою пользу. {bye}'
             else:
                 result += f'Счёт на сегодня {wins}:{defs}. Победила дружба. {bye}'
             return generate_response(req, result, end_session=True)
+        else:
+            return generate_response(req, 'Неправильный формат ответа. Пожалуйста, повторите.')
 
-    elif context['mode'] == 'игра' and context['game_finished'] and context['winner'] == 'Alice' or \
-            context['mode'] == 'обучение' and context['tng_finished'] and context['ask_for_learn']:
+    elif context['mode'] == 'игра' and context['game_finished'] and (context['winner'] == 'Alice' or
+                                                                     answer in ['обучение', 'игра', 'новая игра',
+                                                                                'выход']) or \
+            context['mode'] == 'обучение' and context['tng_finished'] and (context['ask_for_learn'] or
+                                                                           answer in ['обучение', 'игра',
+                                                                                      'новая игра', 'выход']):
         if answer in ['да', 'хочу', 'включи', 'давай', 'обучение']:
             # сценарий перехода к обучению после проигрыша в игре с алисой/запуска обучения с другим числом кучек
             if context['mode'] == 'игра':
@@ -669,13 +739,13 @@ def main():
             context['ask_for_play'] = True
             return generate_response(req, 'Может тогда сыграем?')
         elif context['mode'] == 'игра' and answer in ['нет', 'не хочу']:
-            # сценарий, при котором игрок откаался от обучения после проигрыша,
+            # сценарий, при котором игрок отказался от обучения после проигрыша,
             # алиса спрашивает, хочет ли он сыграть еще раз
             context['ask_for_learn'] = False
             context['ask_for_play'] = True
             return generate_response(req, 'Хотите взять реванш?')
         elif answer in ['нет, запусти новую игру', 'давай сыграем ещё раз', 'хочу реванш', 'реванш', 'новая игра',
-                        'запусти новую игру', 'новая игра']:
+                        'запусти новую игру', 'новая игра', 'игра']:
             # сценарий переапуска игры после проигрыша в игре с алисой
             context['mode'] = 'игра'
             context['kuchki'] = 0
@@ -684,19 +754,21 @@ def main():
             context['first_motion'] = False
             context['first_game'] = False
             context['ask_for_learn'] = False
-            return generate_response(req, 'На сколько куч играем?')
-        else:
+            return gen_but_resp(req, 'На сколько куч играем?', fbut='Одна', sbut='Две')
+        elif answer in ['выход', 'спасибо за игру', 'на сегодня все', 'давай закончим']:
             # выход из сессии
             result = f'Было приятно с вами поиграть. '
             bye = r.choice(bye_phr_l)
             wins, defs = context['victories'], context['defeats']
             if wins > defs:
-                result += f'Счёт на сегодня {wins}:{defs} в вашу пользу. {bye}'  #дополнить прощание
+                result += f'Счёт на сегодня {wins}:{defs} в вашу пользу. {bye}'
             elif context['victories'] < context['defeats']:
                 result += f'Счёт на сегодня {wins}:{defs} в мою пользу. {bye}'
             else:
-                result += f'Счёт на сегодня {wins}:{defs}. Победила дружба. {bye}'
+                result += f'Счёт на сегодня {wins}:{defs}. Победила дружба. До новых встреч! {bye}'
             return generate_response(req, result, end_session=True)
+        else:
+            return generate_response(req, 'Неправильный формат ответа. Пожалуйста, повторите.')
 
     else:
         return generate_response(req, 'Неправильный формат ответа. Пожалуйста, повторите.')
@@ -758,22 +830,12 @@ def generate_image_response(req, text, image_id='', end_session=False):
                 }
             }
         }
-    else:
-        res = {
-            "version": req["version"],
-            "session": req["session"],
-            "response": {
-                "end_session": end_session,
-                "text": 'Вы снова успешно прошли обучение! Не хотите сыграть ?',
-                "tts": 'Вы снова успешно прошли обучение! Не хотите сыграть ?',
-            }
-        }
 
     return json.dumps(res, indent=2)
 
 
-def gen_but_resp(req, text, fbut, sbut, audio_id='', end_session=False):
-    if audio_id == 'W':
+def gen_but_resp(req, text, fbut, sbut, thbut='', audio_id='', end_session=False):
+    if audio_id == 'W' and not thbut:
         res = {
             "version": req["version"],
             "session": req["session"],
@@ -782,6 +844,28 @@ def gen_but_resp(req, text, fbut, sbut, audio_id='', end_session=False):
                 "text": text,
                 "tts": '<speaker audio="alice-sounds-game-win-1.opus"> ого! вы не оставили мне камней, '
                        'вы победили. Не хотите сыграть ещё?',
+                "buttons": [
+                    {
+                        "title": fbut,
+                        "hide": True
+                    },
+                    {
+                        "title": sbut,
+                        "hide": True
+                    },
+                ],
+            },
+
+        }
+    elif audio_id == 'L' and not thbut:
+        res = {
+            "version": req["version"],
+            "session": req["session"],
+            "response": {
+                "end_session": end_session,
+                "text": text,
+                "tts": 'Я забираю последние. <speaker audio="alice-sounds-game-loss-2.opus"> '
+                       'И снова я победила! Не хотите выбрать режим обучения?',
                 "buttons": [
                     {
                         "title": fbut,
@@ -811,6 +895,36 @@ def gen_but_resp(req, text, fbut, sbut, audio_id='', end_session=False):
                     },
                     {
                         "title": sbut,
+                        "hide": True
+                    },
+                    {
+                        "title": thbut,
+                        "hide": True
+                    },
+                ],
+            },
+
+        }
+    elif audio_id == 'W':
+        res = {
+            "version": req["version"],
+            "session": req["session"],
+            "response": {
+                "end_session": end_session,
+                "text": text,
+                "tts": '<speaker audio="alice-sounds-game-win-1.opus"> ого! вы не оставили мне камней, '
+                       'вы победили. Не хотите сыграть ещё?',
+                "buttons": [
+                    {
+                        "title": fbut,
+                        "hide": True
+                    },
+                    {
+                        "title": sbut,
+                        "hide": True
+                    },
+                    {
+                        "title": thbut,
                         "hide": True
                     },
                 ],
