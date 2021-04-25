@@ -20,17 +20,28 @@ def main():
     if req["session"]["new"]:
         storage[user_id] = {'victories': 0, 'defeats': 0, 'mode': 'new'}   # можно будет подвести итог всем играм
         user = User()
-        user.id = user_id
-        db_sess.add(user)
-        db_sess.commit()
+
+        for i in db_sess.query(User).all():
+            if i.username == user_id:
+                storage[user_id]['victories'] = i.wins
+                storage[user_id]['defeats'] = i.defs
+
+            else:
+                user.username = user_id
+                wins, defs = storage[user_id]['victories'], storage[user_id]['defeats']
+                user.wins, user.defs = wins, defs
+                db_sess.add(user)
+                db_sess.commit()
+
         return gen_but_resp(req, 'Пожалуйста, выберите режим из списка: Обучение, Игра с Алисой.',
                             'Обучение', 'Игра с Алисой')
 
     context = storage[user_id]
     answer = req["request"]["original_utterance"].lower()
     answer_list = req["request"]["nlu"]["tokens"]
+
     wins, defs = context['victories'], context['defeats']
-    user = db_sess.query(User).filter(User.id == user_id).first()
+    user = db_sess.query(User).filter(User.username == user_id).first()
     user.wins, user.defs = wins, defs
     db_sess.commit()
 
@@ -65,7 +76,6 @@ def main():
 
     if context['mode'] != 'new':
         answer_list = list(filter(lambda word: word not in phrase_list, answer_list))
-    print(answer_list, answer)
 
     if answer not in {'обучение', 'игра с алисой', 'игра'} and context['mode'] == 'new':
         return gen_but_resp(req, 'Необходимо выбрать режим из списка.', 'Обучение', 'Игра с Алисой')
@@ -123,7 +133,7 @@ def main():
         elif context['mode'] == 'обучение':
             stones = declination(chips[0], 'камень')
             text = f'Правила в игре с одной кучкой просты: задаётся начальное количество камней в куче. ' \
-                   f'Вы можете брать некоторое количество этих камней. Выигрывает тот, кто забирает последний. ' \
+                   f'Вы можете брать некоторое m количество этих камней. Выигрывает тот, кто забирает последний. ' \
                    f'Чтобы выиграть в такой игре, вам нужно брать столько камней, ' \
                    f'чтобы их оставшееся количество перед последним ходом было на 1 больше максимального. ' \
                    f'Давайте потренируемся. ' \
@@ -156,7 +166,7 @@ def main():
                     f'Вы можете брать любое количество камней из любой одной кучи. ' \
                     f'Выигрывает тот, кто забирает последние. ' \
                     f'Чтобы выиграть в такой игре, вам нужно всегда оставлять камни в обеих кучах, ' \
-                    f'иначе Алиса сразу выиграет. Давайте потренируемся. ' \
+                    f'иначе я сразу выиграю. Давайте потренируемся. ' \
                     f'В нашей первой куче {chips[0]} {stones}, а во второй {chips[1]}. '
             context['chips'][motion[0] - 1] -= motion[1]
             text += f'Беру {motion[1]} из {motion[0]}-ой. Остаётся {chips[0]} и {chips[1]} камней. ' \
@@ -256,15 +266,13 @@ def main():
 
     elif (answer and context['mode'] == 'игра' and context['first_motion'] and not context['game_finished'] or
           context['mode'] == 'обучение' and context['first_motion']) and \
-            (len(answer_list) == 2 and (answer_list[0].lower() in ['последние', 'все', 'всё',
-                                                                   'последний', 'последнее'] or
+            (len(answer_list) == 2 and (answer_list[0].lower() in ['последние', 'все', 'всё', 'последний'] or
                                         answer_list[0].lower() in answ_let_to_num.keys() or answer_list[0].isdigit() or
-                                        answer_list[1].lower() in ['последние', 'все', 'всё',
-                                                                   'последний', 'последнее'] or
+                                        answer_list[1].lower() in ['последние', 'все', 'всё', 'последний'] or
                                         answer_list[1].lower() in answ_let_to_num.keys() or
                                         answer_list[1].isdigit() and int(answer_list[1]) in answ_let_to_num.values())
              or len(answer_list) == 1 and
-             (answer_list[0].lower() in ['последние', 'все', 'всё', 'последний', 'последнее'] or
+             (answer_list[0].lower() in ['последние', 'все', 'всё', 'последний'] or
               answer_list[0].lower() in answ_let_to_num.keys() or
              answer_list[0].isdigit())):
         # обрабатываем ход игрока
@@ -274,9 +282,9 @@ def main():
         if kuchki == 1 and len(answer_list) > 1:
             return generate_response(req, 'Назовите количество забираемых камней.')
         elif kuchki == 2 and len(answer_list) < 2 and \
-                (answer_list[0].lower() in ['последние', 'все', 'всё', 'последний', 'последнее'] and
+                (answer_list[0].lower() in ['последние', 'все', 'всё', 'последний'] and
                  chips[0] != 0 and chips[1] != 0 or
-                 answer_list[0].lower() not in ['последние', 'все', 'всё', 'последний', 'последнее'] and
+                 answer_list[0].lower() not in ['последние', 'все', 'всё', 'последний'] and
                  'перв' not in answer and 'втор' not in answer and '1' not in answer and '2' not in answer):
             return generate_response(req, 'Вы не назвали номер кучки. '
                                           'Назовите ещё раз количество камней и номер кучи.')
@@ -298,13 +306,13 @@ def main():
             elif user_motion.isdigit():
                 user_motion = int(user_motion)
 
-            if user_motion in ['последние', 'все', 'всё', 'последний', 'последнее'] and chips[0] > chips_out or \
+            if user_motion in ['последние', 'все', 'всё', 'последний'] and chips[0] > chips_out or \
                     str(user_motion).isdigit() and user_motion > chips_out:
                 text = r.choice(greedy_sayings)
                 stones = declination(chips_out, 'камень')
                 text += f'Вы можете взять максимум {chips_out} {stones}.'
                 return generate_response(req, text)
-            elif user_motion in ['последние', 'все', 'всё', 'последний', 'последнее']:
+            elif user_motion in ['последние', 'все', 'всё', 'последний']:
                 user_motion = chips[0]
             elif user_motion == 0:
                 return generate_response(req, f'Извините, но вы не можете не брать камней или брать 0 камней. '
@@ -393,7 +401,7 @@ def main():
                     return generate_response(req, text)
                 elif context['patience'] == 2:
                     text = f'Вы должны привести кучу в такое состояние,' \
-                           f' чтобы оно делилось на максимальное количество забираем камней + 1. В нашем случае это {chips_out + 1}.' \
+                           f' чтобы оно делилось на максимальное количество забираемых камней + 1. ' \
                            f' Попробуйте сходить еще раз.'
                 elif context['patience'] == 1:
                     stones = declination(user_motion, 'камень')
@@ -432,7 +440,7 @@ def main():
                     result += f'Я беру {Alice_motion[1]}. Остаётся {chips[0]}.'
                     audio_id = ''
                 return generate_response(req, result, audio_id)
-        elif kuchki == 2 and len(answer_list) == 2 or answer in ['все', 'всё', 'последние', 'последний', 'последнее']:
+        elif kuchki == 2 and len(answer_list) == 2 or answer in ['все', 'всё', 'последние', 'последний']:
             if len(answer_list) == 1:
                 user_motion = answer_list[0].lower()
                 kuchka = r.randint(1, 2)
@@ -453,7 +461,7 @@ def main():
                     user_motion = answer_list[0].lower()
                     kuchka = answer_list[1].lower()
             elif (answer_list[0].lower().isdigit() or
-                    answer_list[0].lower() in ['все', 'всё', 'последние', 'последний', 'последнее'] or
+                    answer_list[0].lower() in ['все', 'всё', 'последние', 'последний'] or
                     answer_list[0].lower() in answ_let_to_num.keys()):
                 user_motion = answer_list[0].lower()
                 kuchka = answer_list[1].lower()
@@ -466,8 +474,7 @@ def main():
             else:
                 kuchka = 2
 
-            if user_motion in ['все', 'всё', 'последние',
-                               'последний', 'последнее'] and (chips[0] == 0 or chips[1] == 0):
+            if user_motion in ['все', 'всё', 'последние', 'последний'] and (chips[0] == 0 or chips[1] == 0):
                 if context['mode'] == 'игра':
                     context['winner'] = 'user'
                     context['game_finished'] = True
@@ -523,7 +530,7 @@ def main():
                         context['ask_for_learn'] = True
                     context['first_learn_game'] = False
                     return generate_image_response(req, text, image_id=image_id)
-            elif user_motion in ['все', 'всё', 'последние', 'последний', 'последнее']:
+            elif user_motion in ['все', 'всё', 'последние', 'последний']:
                 # обрабатываем ответ "беру все из *номер кучи*"
                 user_motion = chips[kuchka - 1]
             elif user_motion.isdigit():
@@ -604,7 +611,6 @@ def main():
             elif context['mode'] == 'обучение' and chips[0] != chips[1]:
                 # Алиса ругает игрока за неправильный ход
                 context['patience'] -= 1
-                print(context['patience'])
                 if context['patience'] == 0:
                     # если терпения не осталось, Алиса начинает обучение сначала,
                     # счётчик попыток пройти обучение увеличивается
@@ -615,7 +621,9 @@ def main():
                     chips = context['chips']
                     motion = generate_motion(2, chips, first_motion=True)
                     stones = declination(chips[0], 'камень')
-                    text = f'Давайте начнём сначала: в нашей первой куче {chips[0]} {stones}, а во второй {chips[1]}. '
+                    text = f'Давайте начнём сначала: чтобы выиграть в игре с двумя кучами, ' \
+                           f'вам нужно брать столько камней, чтобы их оставшееся количество в обоих кучах ' \
+                           f'было одинаково. В нашей первой куче {chips[0]} {stones}, а во второй {chips[1]}. '
                     context['chips'][motion[0] - 1] -= motion[1]
                     stones = declination(chips[1], 'камень')
                     text += f'Беру {motion[1]} из {motion[0]}-ой. Остаётся {chips[0]} и {chips[1]} {stones}. ' \
@@ -676,11 +684,11 @@ def main():
             bye = r.choice(bye_phr_l)
             wins, defs = context['victories'], context['defeats']
             if wins > defs:
-                result += f'Счёт на сегодня {wins}:{defs} в вашу пользу. {bye}'
+                result += f'Счёт в нашем противостоянии {wins}:{defs} в вашу пользу. {bye}'
             elif context['victories'] < context['defeats']:
-                result += f'Счёт на сегодня {wins}:{defs} в мою пользу. {bye}'
+                result += f'Счёт в нашем противостоянии {wins}:{defs} в мою пользу. {bye}'
             else:
-                result += f'Счёт на сегодня {wins}:{defs}. Победила дружба. {bye}'
+                result += f'Счёт в нашем противостоянии {wins}:{defs}. Победила дружба. {bye}'
             return generate_response(req, result, end_session=True)
         else:
             return generate_response(req, 'Неправильный формат ответа. Пожалуйста, повторите.')
@@ -785,11 +793,11 @@ def main():
             bye = r.choice(bye_phr_l)
             wins, defs = context['victories'], context['defeats']
             if wins > defs:
-                result += f'Счёт на сегодня {wins}:{defs} в вашу пользу. {bye}'
+                result += f'Счёт в нашем противостоянии {wins}:{defs} в вашу пользу. {bye}'
             elif context['victories'] < context['defeats']:
-                result += f'Счёт на сегодня {wins}:{defs} в мою пользу. {bye}'
+                result += f'Счёт в нашем противостоянии {wins}:{defs} в мою пользу. {bye}'
             else:
-                result += f'Счёт на сегодня {wins}:{defs}. Победила дружба. До новых встреч! {bye}'
+                result += f'Счёт в нашем противостоянии {wins}:{defs}. Победила дружба. До новых встреч! {bye}'
             return generate_response(req, result, end_session=True)
         else:
             return generate_response(req, 'Неправильный формат ответа. Пожалуйста, повторите.')
