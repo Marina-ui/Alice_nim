@@ -25,7 +25,7 @@ def main():
             if i.username == user_id:
                 storage[user_id]['victories'] = i.wins
                 storage[user_id]['defeats'] = i.defs
-
+                break
             else:
                 user.username = user_id
                 wins, defs = storage[user_id]['victories'], storage[user_id]['defeats']
