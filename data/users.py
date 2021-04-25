@@ -6,6 +6,6 @@ class User(SqlAlchemyBase):
     __tablename__ = 'users'
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
-                           primary_key=True)
+                           primary_key=True, unique=True)
     wins = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     defs = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
